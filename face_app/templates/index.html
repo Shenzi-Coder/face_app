@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>تشخیص چهره</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>سیستم تشخیص چهره</h1>
+        <p>یک عکس جدید آپلود کنید تا بررسی شود که آیا در لیست افراد شناخته شده وجود دارد یا خیر.</p>
+        
+        <div class="upload-area">
+            <input type="file" id="imageInput" accept="image/*">
+            <button id="uploadBtn">تشخیص چهره</button>
+        </div>
+
+        <div id="result" class="result-box">
+            <!-- نتیجه اینجا نمایش داده می‌شود -->
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadBtn').addEventListener('click', async () => {
+            const fileInput = document.getElementById('imageInput');
+            const resultDiv = document.getElementById('result');
+            
+            if (fileInput.files.length === 0) {
+                resultDiv.innerHTML = '<p class="error">لطفاً ابتدا یک عکس انتخاب کنید.</p>';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+
+            resultDiv.innerHTML = '<p>در حال پردازش...</p>';
+
+            try {
+                const response = await fetch('/recognize', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.result === 'known') {
+                    resultDiv.innerHTML = `<p class="success">✅ ${data.message}</p>`;
+                } else if (data.result === 'unknown') {
+                    resultDiv.innerHTML = `<p class="warning">❓ ${data.message}</p>`;
+                } else if (data.result === 'no_face') {
+                    resultDiv.innerHTML = `<p class="error">⚠️ ${data.message}</p>`;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">خطا: ${data.error || 'مشکلی پیش آمد'}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">خطای شبکه: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
